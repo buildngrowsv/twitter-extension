@@ -6,6 +6,7 @@ import { Label } from '@/components/ui/label';
 import { Filter, Star, Edit2, Trash2, ChevronRight } from 'lucide-react';
 import TweetIdea from './TweetIdea';
 import { cn } from '@/lib/utils';
+import { generateTweetIdeas } from '@/lib/generate-service';
 
 export interface TweetIdeaType {
   id: string;
@@ -38,8 +39,18 @@ function MainScreen() {
     }
   ]);
 
-  const handleGenerateIdeas = () => {
-    // Implementation for generating new ideas
+  const handleGenerateIdeas = async () => {
+    // Get recent pages from storage
+    chrome.storage.local.get(null, async (items) => {
+      const pages = Object.entries(items)
+        .filter(([key]) => key.startsWith('page_'))
+        .map(([_, value]) => value as GenerationPrompt)
+        .sort((a, b) => b.timestamp - a.timestamp)
+        .slice(0, 5); // Get 5 most recent pages
+
+      const { ideas } = await generateTweetIdeas(pages);
+      setTweetIdeas(current => [...ideas, ...current]);
+    });
   };
 
   const filteredIdeas = showStarredOnly 

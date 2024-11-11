@@ -1,9 +1,26 @@
 import path from 'path';
 import react from '@vitejs/plugin-react';
 import { defineConfig } from 'vite';
+import { copyFileSync } from 'fs';
 
 export default defineConfig({
-  plugins: [react()],
+  plugins: [
+    react(),
+    {
+      name: 'copy-files',
+      writeBundle() {
+        // Copy all necessary files to dist
+        const filesToCopy = ['manifest.json', 'background.js', 'content.js'];
+        
+        filesToCopy.forEach(file => {
+          copyFileSync(
+            path.resolve(__dirname, file),
+            path.resolve(__dirname, `dist/${file}`)
+          );
+        });
+      }
+    }
+  ],
   resolve: {
     alias: {
       '@': path.resolve(__dirname, './src'),
@@ -14,11 +31,6 @@ export default defineConfig({
     rollupOptions: {
       input: {
         main: path.resolve(__dirname, 'index.html'),
-        background: path.resolve(__dirname, 'background.js'),
-        content: path.resolve(__dirname, 'content.js')
-      },
-      output: {
-        entryFileNames: '[name].js'
       }
     }
   }
