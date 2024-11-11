@@ -2,6 +2,10 @@ import path from 'path';
 import react from '@vitejs/plugin-react';
 import { defineConfig } from 'vite';
 import { copyFileSync } from 'fs';
+import dotenv from 'dotenv';
+
+// Load env file
+dotenv.config();
 
 export default defineConfig({
   plugins: [
@@ -33,5 +37,8 @@ export default defineConfig({
         main: path.resolve(__dirname, 'index.html'),
       }
     }
+  },
+  define: {
+    'process.env': process.env
   }
 });
