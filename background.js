@@ -15,20 +15,39 @@ chrome.tabs.onUpdated.addListener((tabId, changeInfo, tab) => {
 });
 
 function capturePageContent() {
-  // Get page content
-  const content = document.body.innerText;
-  const title = document.title;
-  const url = window.location.href;
+  try {
+    const content = document.body.innerText;
+    const title = document.title;
+    const url = window.location.href;
 
-  // Store the captured content
-  chrome.storage.local.set({
-    [`page_${Date.now()}`]: {
-      content,
-      title,
-      url,
-      timestamp: Date.now()
-    }
-  });
+    console.log('Capturing page:', { title, url });
+
+    // Get existing knowledge base entries
+    chrome.storage.local.get(['knowledgeBaseEntries'], (result) => {
+      const entries = result.knowledgeBaseEntries || [];
+      
+      // Create new entry in the correct format
+      const newEntry = {
+        id: Date.now().toString(),
+        type: 'website',
+        content: content,
+        title: title,
+        timestamp: Date.now(),
+        url: url // Optional: add URL if you want to reference it later
+      };
+
+      // Add to knowledge base entries
+      entries.unshift(newEntry); // Add to beginning of array
+      
+      // Save back to storage
+      chrome.storage.local.set({ 
+        knowledgeBaseEntries: entries,
+        visitedPages: [...(result.visitedPages || []), newEntry] // Keep visitedPages for tweet generation
+      });
+    });
+  } catch (error) {
+    console.error('Error capturing page:', error);
+  }
 }
 
 // Clean up old data periodically

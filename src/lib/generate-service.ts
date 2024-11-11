@@ -20,6 +20,14 @@ interface SnippetType {
 
 export async function generateTweetIdeas(recentPages: GenerationPrompt[]) {
   try {
+    // Add logging for debugging
+    console.log('Generating ideas from pages:', recentPages);
+
+    // Get both visited pages and knowledge base entries
+    const storage = await chrome.storage.local.get(['visitedPages', 'knowledgeBaseEntries']);
+    const visitedPages = storage.visitedPages || [];
+    const knowledgeBaseEntries = storage.knowledgeBaseEntries || [];
+
     // Get prompt settings from storage
     const settings = await chrome.storage.local.get(['selectedVersion', 'promptVersions', 'snippetTypes']);
     const selectedVersion = settings.selectedVersion || '1';

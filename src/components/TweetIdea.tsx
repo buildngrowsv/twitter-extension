@@ -8,12 +8,14 @@ import { cn } from '@/lib/utils';
 
 interface TweetIdeaProps {
   idea: TweetIdeaType;
+  isSelected: boolean;
+  onSelect: (id: string, selected: boolean) => void;
   onDelete: (id: string) => void;
   onStar: (id: string) => void;
   onEdit: (id: string, content: string) => void;
 }
 
-function TweetIdea({ idea, onDelete, onStar, onEdit }: TweetIdeaProps) {
+function TweetIdea({ idea, isSelected, onSelect, onDelete, onStar, onEdit }: TweetIdeaProps) {
   const [isEditing, setIsEditing] = useState(false);
   const [editContent, setEditContent] = useState(idea.content);
   const [showThread, setShowThread] = useState(false);
@@ -25,6 +27,14 @@ function TweetIdea({ idea, onDelete, onStar, onEdit }: TweetIdeaProps) {
   const handleEdit = () => {
     onEdit(idea.id, editContent);
     setIsEditing(false);
+  };
+
+  const handleClick = (e: React.MouseEvent) => {
+    if (e.shiftKey) {
+      onSelect(idea.id, !isSelected);
+    } else if (!isEditing) {
+      handleCopy();
+    }
   };
 
   if (showThread && idea.isThread) {
@@ -55,9 +65,10 @@ function TweetIdea({ idea, onDelete, onStar, onEdit }: TweetIdeaProps) {
     <Card
       className={cn(
         "p-4 hover:bg-accent/50 transition-colors",
-        !isEditing && "cursor-pointer"
+        !isEditing && "cursor-pointer",
+        isSelected && "bg-accent"
       )}
-      onClick={!isEditing ? handleCopy : undefined}
+      onClick={handleClick}
     >
       {isEditing ? (
         <div className="space-y-2">

@@ -1,8 +1,10 @@
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { Input } from '@/components/ui/input';
 import { Button } from '@/components/ui/button';
 import { Label } from '@/components/ui/label';
 import { Textarea } from '@/components/ui/textarea';
+import { Copy, Plus } from 'lucide-react';
+import { useToast } from '@/hooks/use-toast';
 import {
   Select,
   SelectContent,
@@ -37,6 +39,7 @@ function SettingsScreen() {
 Be sure to keep it fun, short and sweet`
     }
   ]);
+  const { toast } = useToast();
 
   const [snippetTypes, setSnippetTypes] = useState<SnippetType[]>([
     {
@@ -61,7 +64,78 @@ Be sure to keep it fun, short and sweet`
     }
   ]);
 
+  useEffect(() => {
+    // Load settings from storage
+    chrome.storage.local.get(
+      ['retentionDays', 'selectedVersion', 'promptVersions', 'snippetTypes'],
+      (result) => {
+        if (result.retentionDays) setRetentionDays(result.retentionDays);
+        if (result.selectedVersion) setSelectedVersion(result.selectedVersion);
+        if (result.promptVersions) setPromptVersions(result.promptVersions);
+        if (result.snippetTypes) setSnippetTypes(result.snippetTypes);
+      }
+    );
+  }, []);
+
+  useEffect(() => {
+    // Save settings to storage
+    chrome.storage.local.set({
+      retentionDays,
+      selectedVersion,
+      promptVersions,
+      snippetTypes
+    });
+  }, [retentionDays, selectedVersion, promptVersions, snippetTypes]);
+
   const selectedPrompt = promptVersions.find(v => v.id === selectedVersion);
+
+  const handleCreateVersion = () => {
+    const newVersion: PromptVersion = {
+      id: Date.now().toString(),
+      name: `Version ${promptVersions.length + 1}`,
+      prompt: ''
+    };
+    setPromptVersions(prev => [...prev, newVersion]);
+    setSelectedVersion(newVersion.id);
+    
+    toast({
+      title: "Success",
+      description: "New version created",
+    });
+  };
+
+  const handleDuplicateVersion = () => {
+    if (!selectedPrompt) return;
+    
+    const newVersion: PromptVersion = {
+      id: Date.now().toString(),
+      name: `${selectedPrompt.name} (Copy)`,
+      prompt: selectedPrompt.prompt
+    };
+    setPromptVersions(prev => [...prev, newVersion]);
+    setSelectedVersion(newVersion.id);
+    
+    toast({
+      title: "Success",
+      description: "Version duplicated",
+    });
+  };
+
+  const handleClearStorage = async () => {
+    try {
+      await chrome.storage.local.clear();
+      toast({
+        title: "Storage Cleared",
+        description: "All extension data has been cleared",
+      });
+    } catch (error) {
+      toast({
+        title: "Error",
+        description: "Failed to clear storage",
+        variant: "destructive",
+      });
+    }
+  };
 
   return (
     <div className="space-y-6">
@@ -75,7 +149,34 @@ Be sure to keep it fun, short and sweet`
       </div>
 
       <div className="space-y-2">
-        <Label>Prompt Version</Label>
+        <div className="flex items-center justify-between">
+          <Label>Prompt Version</Label>
+          <div className="space-x-2">
+            <Button
+              variant="outline"
+              size="sm"
+              onClick={handleCreateVersion}
+            >
+              <Plus className="h-4 w-4 mr-1" />
+              New Version
+            </Button>
+            <Button
+              variant="outline"
+              size="sm"
+              onClick={handleDuplicateVersion}
+              disabled={!selectedPrompt}
+            >
+              <Copy className="h-4 w-4 mr-1" />
+              Duplicate
+            </Button>
+            <Button 
+              variant="destructive" 
+              onClick={handleClearStorage}
+            >
+              Clear All Data
+            </Button>
+          </div>
+        </div>
         <Select
           value={selectedVersion}
           onValueChange={setSelectedVersion}
@@ -107,6 +208,7 @@ Be sure to keep it fun, short and sweet`
             );
           }}
           className="min-h-[200px]"
+          placeholder="Enter prompt template..."
         />
       </div>
 
@@ -126,6 +228,7 @@ Be sure to keep it fun, short and sweet`
                   )
                 );
               }}
+              placeholder={`Enter description for ${type.type}...`}
             />
           </div>
         ))}
