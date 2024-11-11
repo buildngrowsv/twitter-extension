@@ -1,0 +1,25 @@
+{
+  "manifest_version": 3,
+  "name": "Tweet Generator",
+  "version": "1.0",
+  "description": "Generate tweet ideas from your browsing history and knowledge base",
+  "permissions": [
+    "storage",
+    "tabs",
+    "activeTab",
+    "scripting"
+  ],
+  "action": {
+    "default_popup": "index.html"
+  },
+  "background": {
+    "service_worker": "background.js",
+    "type": "module"
+  },
+  "content_scripts": [
+    {
+      "matches": ["<all_urls>"],
+      "js": ["content.js"]
+    }
+  ]
+}
